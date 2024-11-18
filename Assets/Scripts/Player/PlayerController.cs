@@ -51,9 +51,13 @@ public class PlayerController : NetworkBehaviour
 
     private ClientNetworkTransform _transform;
 
+    private InventoryController inventoryController;
+
     void Awake() {
         rb = GetComponent<Rigidbody>();
         _transform = GetComponent<ClientNetworkTransform>();
+        
+        inventoryController = GetComponent<InventoryController>();
 
         playerCam = Camera.main.transform;
     }
@@ -99,6 +103,34 @@ public class PlayerController : NetworkBehaviour
             StartCrouch();
         if (Input.GetKeyUp(KeyCode.LeftControl))
             StopCrouch();
+
+        //Pickup
+        RaycastHit hit;
+        if (Physics.Raycast(playerCam.position, playerCam.forward, out hit, 3f)) {
+            if (hit.collider.GetComponent<Item>() != null && hit.collider.gameObject != inventoryController.activeItem) {
+                Item item = hit.collider.GetComponent<Item>();
+                if (item.parent == null) {
+                    inventoryController.hoveredItem = hit.collider.gameObject;
+
+                    if (Input.GetKeyDown(KeyCode.F)) {
+                        inventoryController.PickupItem(hit.collider.gameObject);
+                    }
+                }
+            }
+        } else {
+            inventoryController.hoveredItem = null;
+        }
+        
+        //Drop
+        if (Input.GetKeyDown(KeyCode.G) && inventoryController.activeItem != null) {
+            inventoryController.DropItem();
+        }
+
+        //Use
+        if (Input.GetMouseButtonDown(0) && inventoryController.activeItem != null) {
+            inventoryController.UseItem();
+        }
+
     }
 
     private void StartCrouch() {
@@ -285,5 +317,7 @@ public class PlayerController : NetworkBehaviour
     private void StopGrounded() {
         grounded = false;
     }
+
+    
 
 }
